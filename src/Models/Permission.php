@@ -5,11 +5,13 @@ namespace Spatie\Permission\Models;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Seides_ERP\Models\ModuloBloque;
 use Spatie\Permission\Contracts\Permission as PermissionContract;
 use Spatie\Permission\Exceptions\PermissionAlreadyExists;
 use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 use Spatie\Permission\Guard;
 use Spatie\Permission\PermissionRegistrar;
+use Spatie\Permission\Traits\HasPermissions;
 use Spatie\Permission\Traits\HasRoles;
 use Spatie\Permission\Traits\RefreshesPermissionCache;
 
@@ -19,11 +21,15 @@ use Spatie\Permission\Traits\RefreshesPermissionCache;
  */
 class Permission extends Model implements PermissionContract
 {
+    use HasPermissions;
     use HasRoles;
     use RefreshesPermissionCache;
-
+    use \Awobaz\Compoships\Compoships;
     protected $guarded = [];
-
+    public function modulo_bloque()
+    {
+        return $this->belongsTo(ModuloBloque::class, ['id_bloque', 'id_modulo'], ['id_bloque', 'id_modulo']);
+    }
     public function __construct(array $attributes = [])
     {
         $attributes['guard_name'] = $attributes['guard_name'] ?? config('auth.defaults.guard');
@@ -72,6 +78,16 @@ class Permission extends Model implements PermissionContract
     {
         return $this->morphedByMany(
             getModelForGuard($this->attributes['guard_name'] ?? config('auth.defaults.guard')),
+            'model',
+            config('permission.table_names.model_has_permissions'),
+            app(PermissionRegistrar::class)->pivotPermission,
+            config('permission.column_names.model_morph_key')
+        );
+    }
+    public function subpermisos(): BelongsToMany
+    {
+        return $this->morphedByMany(
+            Permission::class,
             'model',
             config('permission.table_names.model_has_permissions'),
             app(PermissionRegistrar::class)->pivotPermission,
