@@ -95,6 +95,16 @@ class Permission extends Model implements PermissionContract
         );
     }
 
+    public function permisoPadre(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Permission::class,
+            config('permission.table_names.model_has_permissions'), // La tabla pivote
+            config('permission.column_names.model_morph_key'), // La columna del modelo que se refiere al permiso
+            app(PermissionRegistrar::class)->pivotPermission // La columna pivote para permisos
+        );
+    }
+
     /**
      * Find a permission by its name (and optionally guardName).
      *
